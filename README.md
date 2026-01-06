@@ -146,7 +146,7 @@ git clone <URL_DU_REPO>
 
 3. **Démarrer chaque module service** individuellement (ports 8082-8085) ou via Maven :
 
-mvn spring-boot:run -pl <nom-du-module>
+mvn spring-boot:run -pl  `<nom-du-module>` 
 
 Remplacer `<nom-du-module>` par le module à lancer, par exemple :  
 `patient-service-api`, `medecin-service-api`, `rendezvous-service-api`, `consultation-service-api`.
