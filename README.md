@@ -34,10 +34,10 @@ Projet Maven **multi-modules** :
 - Configuration dans `application.properties` :
 
 ```properties
-spring.application.name=cabinetMedicalTp1
+spring.application.name=cabinetMedicalTp2
 spring.datasource.url=jdbc:h2:mem:cabinetMedicalSoaTp2DB
 spring.jpa.show-sql=true
 spring.jpa.hibernate.ddl-auto=create-drop
-spring.h2.console.enabled=true
+spring.h2.console.enabled=true '''
 
 ---
