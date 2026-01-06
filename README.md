@@ -1,129 +1,135 @@
-# Cabinet Medical TP2 - Architecture SOA avec ESB (Apache Camel)
+CabinetMedicalTp2SOA
+🎯 Contexte
 
-## Contexte
-Ce projet est réalisé dans le cadre du TP2 du module **Systèmes Distribués Basés sur les Microservices** du Master IPS à la Faculté des Sciences de Rabat.  
-L’objectif est de transformer une application monolithique en une **architecture orientée services (SOA)**, avec un **ESB (Apache Camel)** centralisant les accès externes.
+Ce projet est réalisé dans le cadre du Master IPS – Systèmes Distribués Basés sur les Microservices à la Faculté des Sciences de Rabat.
+Il consiste à transformer une application monolithique d’un Cabinet Médical en une architecture orientée services (SOA) avec un ESB Apache Camel.
 
-Chaque service métier est autonome et expose sa propre API. Les services communiquent uniquement via l’ESB.
+L’objectif est de créer des services métiers autonomes pour Patients, Médecins, Rendez-vous et Consultations, tout en centralisant les accès externes via un ESB.
 
----
+🏗️ Architecture du projet
 
-## Structure du projet
+Le projet est un Maven multi-modules structuré comme suit :
 
-Projet Maven **multi-modules** :
+Module	Rôle	Port recommandé
+cabinet-esb	ESB Apache Camel, point d’entrée unique pour les clients externes	8080
+cabinet-repo	Modèle de données partagé et Repositories Spring Data JPA	–
+patient-service-api	Service métier Patient (API + règles métier)	8082
+medecin-service-api	Service métier Médecin (API + règles métier)	8083
+rendezvous-service-api	Service métier Rendez-vous (API + règles métier)	8084
+consultation-service-api	Service métier Consultation (API + règles métier)	8085
+🔹 Module cabinet-repo
 
-| Module | Rôle |
-|--------|------|
-| `cabinetMedicalTp2SOA` | Projet parent |
-| `cabinet-esb` | ESB Apache Camel exposant les APIs publiques |
-| `cabinet-repo` | Entités JPA et Repositories partagés (CRUD) |
-| `patient-service-api` | Gestion des patients |
-| `medecin-service-api` | Gestion des médecins |
-| `rendezvous-service-api` | Gestion des rendez-vous |
-| `consultation-service-api` | Gestion des consultations |
+Contient uniquement les entités JPA et les repositories Spring Data.
 
----
+Aucun code métier n’y est implémenté.
 
-## Modules principaux
+Base de données : H2 (en mémoire).
 
-### 1. cabinet-repo
-- Contient uniquement les **entités JPA** et les **repositories Spring Data JPA**.
-- Entités : `Patient`, `Medecin`, `RendezVous`, `Consultation`
-- Repositories : `PatientRepository`, `MedecinRepository`, `RendezVousRepository`, `ConsultationRepository`
-- Base de données utilisée : H2 (en mémoire)
-- Configuration dans `application.properties` :
+Configuration (application.properties) :
 
-```properties
 spring.application.name=cabinetMedicalTp2
 spring.datasource.url=jdbc:h2:mem:cabinetMedicalSoaTp2DB
 spring.jpa.show-sql=true
 spring.jpa.hibernate.ddl-auto=create-drop
-spring.h2.console.enabled=true **```**
+spring.h2.console.enabled=true
 
----
 
-## 2. Services métiers
+Packages :
 
-Chaque service suit la structure **Controller → Service → Repository**.
+ma.fsr.soa.cabinetrepo.model
 
-### patient-service-api
-- **Port recommandé** : 8082  
-- **API interne exposée** : `/internal/api/v1/patients`  
-- **Règles métiers** : nom et téléphone obligatoires, date de naissance ≤ aujourd’hui  
-- **Opérations** : CRUD sur les patients
+ma.fsr.soa.cabinetrepo.repository
 
-### medecin-service-api
-- **Port recommandé** : 8083  
-- **API interne exposée** : `/internal/api/v1/medecins`  
-- **Règles métiers** : nom, email (valide) et spécialité obligatoires  
-- **Opérations** : CRUD sur les médecins
+🔹 Services Métiers
 
-### rendezvous-service-api
-- **Port recommandé** : 8084  
-- **API interne exposée** : `/internal/api/v1/rendezvous`  
-- **Règles métiers** : date future, patient et médecin existants, statut autorisé (`PLANIFIE`, `ANNULE`, `TERMINE`)  
-- **Opérations** : CRUD + modification statut
+Chaque service expose ses endpoints via un Controller REST interne et applique des règles métiers.
 
-### consultation-service-api
-- **Port recommandé** : 8085  
-- **API interne exposée** : `/internal/api/v1/consultations`  
-- **Règles métiers** : rendez-vous existant, date consultation ≥ date rendez-vous, rapport ≥ 10 caractères  
-- **Opérations** : CRUD sur les consultations
+Patient Service (patient-service-api)
 
----
+Endpoints internes : /internal/api/v1/patients
 
-## 3. Module cabinet-esb
+Ports : 8082
 
-- **Port recommandé** : 8080  
-- Point d’entrée unique pour les clients externes.  
-- Routage des requêtes externes vers les services internes.  
-- Dépendances : `spring-boot-starter-web`, `camel-spring-boot-starter`, `camel-http`, `camel-rest`, `camel-servlet`  
+Exemple de règles :
 
-### Exemple de mapping ESB
+Nom et téléphone obligatoires
 
-| Domaine        | Méthode | API Externe                     | API Interne                                   |
-|----------------|---------|--------------------------------|-----------------------------------------------|
-| Patients       | GET     | /api/patients                  | /internal/api/v1/patients                     |
-| Patients       | GET     | /api/patients/{id}             | /internal/api/v1/patients/{id}               |
-| Patients       | POST    | /api/patients                  | /internal/api/v1/patients                     |
-| Patients       | PUT     | /api/patients/{id}             | /internal/api/v1/patients/{id}               |
-| Patients       | DELETE  | /api/patients/{id}             | /internal/api/v1/patients/{id}               |
-| Médecins       | GET     | /api/medecins                  | /internal/api/v1/medecins                     |
-| Médecins       | GET     | /api/medecins/{id}             | /internal/api/v1/medecins/{id}               |
-| Médecins       | POST    | /api/medecins                  | /internal/api/v1/medecins                     |
-| Médecins       | PUT     | /api/medecins/{id}             | /internal/api/v1/medecins/{id}               |
-| Médecins       | DELETE  | /api/medecins/{id}             | /internal/api/v1/medecins/{id}               |
-| Rendez-vous    | GET     | /api/rendezvous                | /internal/api/v1/rendezvous                  |
-| Rendez-vous    | GET     | /api/rendezvous/{id}           | /internal/api/v1/rendezvous/{id}             |
-| Rendez-vous    | GET     | /api/rendezvous/patient/{id}   | /internal/api/v1/rendezvous/patient/{id}     |
-| Rendez-vous    | GET     | /api/rendezvous/medecin/{id}   | /internal/api/v1/rendezvous/medecin/{id}     |
-| Rendez-vous    | POST    | /api/rendezvous                | /internal/api/v1/rendezvous                  |
-| Rendez-vous    | PUT     | /api/rendezvous/{id}           | /internal/api/v1/rendezvous/{id}             |
-| Rendez-vous    | PATCH   | /api/rendezvous/{id}/statut    | /internal/api/v1/rendezvous/{id}/statut      |
-| Rendez-vous    | DELETE  | /api/rendezvous/{id}           | /internal/api/v1/rendezvous/{id}             |
-| Consultations  | GET     | /api/consultations             | /internal/api/v1/consultations               |
-| Consultations  | GET     | /api/consultations/{id}        | /internal/api/v1/consultations/{id}          |
-| Consultations  | GET     | /api/consultations/rendezvous/{id} | /internal/api/v1/consultations/rendezvous/{id} |
-| Consultations  | POST    | /api/consultations             | /internal/api/v1/consultations               |
-| Consultations  | PUT     | /api/consultations/{id}        | /internal/api/v1/consultations/{id}          |
-| Consultations  | DELETE  | /api/consultations/{id}        | /internal/api/v1/consultations/{id}          |
+Date de naissance ne peut pas être future
 
----
+Messages d’erreur personnalisés
 
-## Technologies utilisées
-- Java 21  
-- Spring Boot 3.5.9  
-- Spring Data JPA  
-- H2 Database  
-- Apache Camel 4.6.0  
-- Maven  
-- Lombok  
+Médecin Service (medecin-service-api)
 
----
+Endpoints internes : /internal/api/v1/medecins
 
-## Lancement du projet
+Ports : 8083
 
-1. Cloner le projet :  
-```bash
-git clone <URL_DU_REPO>
+Exemple de règles :
 
+Nom, email et spécialité obligatoires
+
+Email doit être valide
+
+Messages d’erreur personnalisés
+
+Rendez-vous Service (rendezvous-service-api)
+
+Endpoints internes : /internal/api/v1/rendezvous
+
+Ports : 8084
+
+Exemple de règles :
+
+Date du rendez-vous future
+
+Patient et médecin doivent exister
+
+Statuts autorisés : PLANIFIE, ANNULE, TERMINE
+
+Consultation Service (consultation-service-api)
+
+Endpoints internes : /internal/api/v1/consultations
+
+Ports : 8085
+
+Exemple de règles :
+
+Rendez-vous doit exister
+
+Date de consultation ≥ date du rendez-vous
+
+Rapport minimum 10 caractères
+
+🔹 ESB (cabinet-esb)
+
+Point d’entrée unique pour toutes les requêtes externes.
+
+Ports : 8080
+
+Routage entre API externes et API internes :
+
+Domaine	Méthode	API Externe	API Interne
+Patients	GET	/api/patients	/internal/api/v1/patients
+Patients	GET	/api/patients/{id}	/internal/api/v1/patients/{id}
+Patients	POST	/api/patients	/internal/api/v1/patients
+Patients	PUT	/api/patients/{id}	/internal/api/v1/patients/{id}
+Patients	DELETE	/api/patients/{id}	/internal/api/v1/patients/{id}
+...	...	...	...
+
+Le même principe est appliqué pour Médecins, Rendez-vous et Consultations.
+
+🚀 Lancer le projet
+
+Cloner le projet :
+
+git clone https://github.com/<votre-utilisateur>/CabinetMedicalTp2SOA.git
+cd CabinetMedicalTp2SOA
+
+
+Importer les modules dans IDE Spring Boot (IntelliJ/STS/VS Code).
+
+Lancer chaque service métier individuellement (8082–8085) pour tester les endpoints internes.
+
+Lancer le module ESB (8080) pour exposer les endpoints externes.
+
+Accéder à la console H2 : http://localhost:8080/h2-console
