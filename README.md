@@ -1,79 +1,43 @@
-#  Cabinet Médical – Architecture SOA (Spring Boot)
+# Cabinet Medical TP2 - Architecture SOA avec ESB (Apache Camel)
 
-##  Description
-Ce projet implémente un système de gestion d’un cabinet médical basé sur une
-architecture orientée services (SOA) en utilisant Spring Boot.
+## Contexte
+Ce projet est réalisé dans le cadre du TP2 du module **Systèmes Distribués Basés sur les Microservices** du Master IPS à la Faculté des Sciences de Rabat.  
+L’objectif est de transformer une application monolithique en une **architecture orientée services (SOA)**, avec un **ESB (Apache Camel)** centralisant les accès externes.
 
-Il permet la gestion de :
--  Patients
--  Médecins
--  Rendez-vous
--  Consultations
+Chaque service métier est autonome et expose sa propre API. Les services communiquent uniquement via l’ESB.
 
 ---
 
-##  Architecture du projet
+## Structure du projet
 
-Le projet est composé de plusieurs services indépendants :
+Projet Maven **multi-modules** :
 
-cabinet-medical-soa
-│
-├── patient-service
-├── medecin-service
-├── rendezvous-service
-├── consultation-service
-└── cabinetrepo (models + repositories partagés)
-
-##  Technologies utilisées
-- Java 17
-- Spring Boot
-- Spring Data JPA
-- Maven
-- H2 Database
-- Lombok
-- REST API
-- Architecture SOA
+| Module | Rôle |
+|--------|------|
+| `cabinetMedicalTp2SOA` | Projet parent |
+| `cabinet-esb` | ESB Apache Camel exposant les APIs publiques |
+| `cabinet-repo` | Entités JPA et Repositories partagés (CRUD) |
+| `patient-service-api` | Gestion des patients |
+| `medecin-service-api` | Gestion des médecins |
+| `rendezvous-service-api` | Gestion des rendez-vous |
+| `consultation-service-api` | Gestion des consultations |
 
 ---
 
-##  Configuration
+## Modules principaux
 
-### Base de données
-Chaque service utilise une base H2 en mémoire.
-
-Exemple `application.properties` :
+### 1. cabinet-repo
+- Contient uniquement les **entités JPA** et les **repositories Spring Data JPA**.
+- Entités : `Patient`, `Medecin`, `RendezVous`, `Consultation`
+- Repositories : `PatientRepository`, `MedecinRepository`, `RendezVousRepository`, `ConsultationRepository`
+- Base de données utilisée : H2 (en mémoire)
+- Configuration dans `application.properties` :
 
 ```properties
-server.port=8083
-
-spring.datasource.url=jdbc:h2:mem:rendezvous-db
-spring.datasource.driverClassName=org.h2.Driver
-spring.datasource.username=sa
-spring.datasource.password=
-
-spring.jpa.hibernate.ddl-auto=update
+spring.application.name=cabinetMedicalTp1
+spring.datasource.url=jdbc:h2:mem:cabinetMedicalSoaTp2DB
 spring.jpa.show-sql=true
-
+spring.jpa.hibernate.ddl-auto=create-drop
 spring.h2.console.enabled=true
-spring.h2.console.path=/h2-console
 
 ---
-
-##  Lancer le projet
-###  Compiler le projet
-
-Dans chaque service :
-
-mvn clean install
-
----
-###  Démarrer un service
-mvn spring-boot:run
-
---- 
-## Ports des services
-Service	Port
-Patient	8081
-Médecin	8082
-Rendez-Vous	8083
-Consultation	8084
